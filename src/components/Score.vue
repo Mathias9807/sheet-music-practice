@@ -18,7 +18,7 @@ onMounted(() => {
     // drawingParameters: "compacttight" // don't display title, composer etc., smaller margins
   });
 
-  osmd.load('/scores/Waltz_in_A_MinorChopin.mxl').then(() => {
+  osmd.load(process.env.BASE_URL + 'scores/Waltz_in_A_MinorChopin.mxl').then(() => {
     if (!osmd) return;
 
     osmd.render();
