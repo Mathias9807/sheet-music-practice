@@ -4,9 +4,10 @@
 
 <script lang="ts" setup>
 import { GraphicalNote, Note, OpenSheetMusicDisplay, PointF2D } from 'opensheetmusicdisplay';
-import { onMounted, Ref, ref } from 'vue';
+import { onMounted, Ref, ref, watch, watchEffect } from 'vue';
 
 import { initAudioPlayer, play, stopAllNotes } from '@/audioPlayer.js';
+import { noteInput } from '@/input';
 
 let osmd: OpenSheetMusicDisplay | null = null;
 
@@ -104,6 +105,37 @@ const click = (event: MouseEvent) => {
   }
   playing.value = true;
 };
+
+// Listen to user input and move the cursor forward
+let notesUpNext: number[] = [];
+watch(noteInput, () => {
+  const note = noteInput.pop();
+  if (!note) return;
+  if (!osmd) return;
+
+  console.log(osmd.Cursor.Iterator.CurrentVoiceEntries[0].ParentSourceStaffEntry.ParentStaff.idInMusicSheet == 0);
+  const currentNotes = [];
+  for (const ve of osmd.Cursor.Iterator.CurrentVoiceEntries.filter(ve => ve.ParentSourceStaffEntry.ParentStaff.idInMusicSheet == 0) ?? []) {
+    currentNotes.push(...ve.Notes.filter(n => !n.isRest()).map(n => n.halfTone));
+  }
+
+  if (notesUpNext.length == 0) {
+    notesUpNext = currentNotes;
+    if (currentNotes.length == 0) {
+      osmd.Cursor.next();
+      return;
+    }
+  }
+
+  console.log(note.semitones, notesUpNext);
+  notesUpNext = notesUpNext.filter(n => note.semitones != n);
+
+  if (notesUpNext.length == 0) {
+    play(note.semitones, 0, 0.3);
+    osmd?.Cursor.next();
+  }
+})
+
 </script>
 
 <style scoped lang="scss">
